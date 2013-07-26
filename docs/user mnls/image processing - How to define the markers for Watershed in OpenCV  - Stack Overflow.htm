@@ -1,0 +1,597 @@
+Stack Exchange
+sign up
+</users/login?returnurl=%2fquestions%2f11294859%2fhow-to-define-the-markers-for-watershed-in-opencv%2f11438165>
+| log in
+</users/login?returnurl=%2fquestions%2f11294859%2fhow-to-define-the-markers-for-watershed-in-opencv%2f11438165>
+| careers 2.0 <http://careers.stackoverflow.com> |
+
+
+Stack Overflow </>
+
+  * Questions </questions>
+  * Tags </tags>
+  * Tour </about>
+  * Users </users>
+
+  * Ask Question </questions/ask>
+
+Tell me more </about> ×
+Stack Overflow is a question and answer site for professional and
+enthusiast programmers. It's 100% free, no registration required.
+
+
+  How to define the markers for Watershed in OpenCV?
+  </questions/11294859/how-to-define-the-markers-for-watershed-in-opencv>
+
+<http://engine.adzerk.net/r?e=eyJhdiI6NDE0LCJhdCI6NCwiY20iOjI5MTEsImNoIjoxMTc4LCJjciI6NTkxOSwiZGkiOiI3ODAzNjdjZDJlYTY0MjA3ODQyZWEzOTFkODdhNDhmYyIsImRtIjoxLCJmYyI6MTAxODQsImZsIjo3NDcyLCJrdyI6Im9wZW5jdixpbWFnZS1wcm9jZXNzaW5nLGNvbXB1dGVyLXZpc2lvbixpbWFnZS1zZWdtZW50YXRpb24sd2F0ZXJzaGVkIiwibnciOjIyLCJyZiI6Imh0dHA6Ly9vcGVuY3ZweXRob24uYmxvZ3Nwb3QuaW4vMjAxMi8wNy9zb2Ytd2F0ZXJzaGVkLWluLW9wZW5jdi5odG1sIiwicnYiOjAsInByIjoxNjA0LCJzdCI6ODI3Nywiem4iOjQzLCJ1ciI6Imh0dHA6Ly9jYXJlZXJzLnN0YWNrb3ZlcmZsb3cuY29tLyJ9&s=Z9UEuFT5_AP7Ar90IRWZ9T_apn4>
+No problem. We won't show you that ad again. Why didn't you like it?
+
+  * Uninteresting
+  * Misleading
+  * Offensive
+  * Repetitive
+
+Oops! I didn't mean to do this. <#>
+
+up vote 17 down vote favorite <#>
+*18*
+	
+
+I'm writing for Android with OpenCV. I'm segmenting an image similar to
+below using marker-controlled watershed, without the user manually
+marking the image. I'm planning to use the regional maxima as markers.
+
+|minMaxLoc()| would give me the value, but how can I restrict it to the
+blobs which is what I'm interested in? Can I utilize the results from
+|findContours()| or cvBlob blobs to restrict the ROI and apply maxima to
+each blob?
+
+input image
+
+opencv </questions/tagged/opencv> image-processing
+</questions/tagged/image-processing> computer-vision
+</questions/tagged/computer-vision> image-segmentation
+</questions/tagged/image-segmentation> watershed
+</questions/tagged/watershed>
+share </q/11294859>|improve this question </posts/11294859/edit>
+	
+edited Mar 8 at 11:15 </posts/11294859/revisions>
+</users/7735/harriv>
+Harriv </users/7735/harriv>
+3,1511749
+	
+asked Jul 2 '12 at 13:37
+</users/1192843/tru>
+Tru </users/1192843/tru>
+323515
+
+	
+	
+
+
+    2 Answers
+
+active
+</questions/11294859/how-to-define-the-markers-for-watershed-in-opencv?answertab=active#tab-top>
+oldest
+</questions/11294859/how-to-define-the-markers-for-watershed-in-opencv?answertab=oldest#tab-top>
+votes
+</questions/11294859/how-to-define-the-markers-for-watershed-in-opencv?answertab=votes#tab-top>
+
+up vote 26 down vote accepted
+	
+
+I would like to explain a simple code on how to use watershed here. I am
+using OpenCV-Python, but i hope you won't have any difficulty to understand.
+
+In this code, I will be using watershed as a tool for
+*foreground-background extraction.* (This example is the python
+counterpart of the C++ code in OpenCV cookbook). This is a simple case
+to understand watershed. Apart from that, you can use watershed to count
+the number of objects in this image. That will be a slightly advanced
+version of this code.
+
+*1* - First we load our image, convert it to grayscale, and threshold it
+with a suitable value. I took *Otsu's binarization*, so it would find
+the best threshold value.
+
+|import cv2
+import numpy as np
+
+img = cv2.imread('sofwatershed.jpg')
+gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
+ret,thresh = cv2.threshold(gray,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+|
+
+Below is the result I got:
+
+enter image description here
+
+( even that result is good, because great contrast between foreground
+and background images)
+
+2 - Now we have to create the marker. *Marker is the image with same
+size as that of original image which is 32SC1 (32 bit signed single
+channel).*
+
+Now there will be some regions in the original image where you are
+simply sure, that part belong to foreground. Mark such region with 255
+in marker image. Now the region where you are sure to be the background
+are marked with 128. The region you are not sure are marked with 0. That
+is we are going to do next.
+
+*A - Foreground region*:- We have already got a threshold image where
+pills are white color. We erode them a little, so that we are sure
+remaining region belongs to foreground.
+
+|fg = cv2.erode(thresh,None,iterations = 2)
+|
+
+*fg* :
+
+enter image description here
+
+*B - Background region* :- Here we dilate the thresholded image so that
+background region is reduced. But we are sure remaining black region is
+100% background. We set it to 128.
+
+|bgt = cv2.dilate(thresh,None,iterations = 3)
+ret,bg = cv2.threshold(bgt,1,128,1)
+|
+
+Now we get *bg* as follows :
+
+enter image description here
+
+*C - Now we add both fg and bg* :
+
+|marker = cv2.add(fg,bg)
+|
+
+Below is what we get :
+
+enter image description here
+
+Now we can clearly understand from above image, that white region is
+100% foreground, gray region is 100% background, and black region we are
+not sure.
+
+Then we convert it into 32SC1 :
+
+|marker32 = np.int32(marker)
+|
+
+3 - Finally we *apply watershed* and convert result back into *uint8* image:
+
+|cv2.watershed(img,marker32)
+m = cv2.convertScaleAbs(marker32)
+|
+
+*m :*
+
+enter image description here
+
+*4* - *We threshold it properly to get the mask and perform
+|bitwise_and| with the input image:*
+
+|ret,thresh = cv2.threshold(m,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+res = cv2.bitwise_and(img,img,mask = thresh)
+|
+
+*res :*
+
+enter image description here
+
+Hope it helps!!!
+
+ARK
+
+share </a/11438165>|improve this answer </posts/11438165/edit>
+	
+edited May 8 at 15:40 </posts/11438165/revisions>
+
+	
+answered Jul 11 '12 at 17:30
+</users/1134940/abid-rahman-k>
+Abid Rahman K </users/1134940/abid-rahman-k>
+11.6k33262
+
+	
+	
+Consider rechecking this, because it is showing a completely incorrect
+use of watershed. – mmgp </users/1832154/mmgp> Jan 31 at 3:22
+<#comment20414161_11438165>
+	
+@mmgp : may be you are right. This is just a python version of basic C++
+code given in cookbook, which shows to set markers, etc. I thought it
+would be a nice sample for freshers, |including me|. Anyway, your answer
+is great. It fills what lacks in my answer. – Abid Rahman K
+</users/1134940/abid-rahman-k> Jan 31 at 9:28 <#comment20421614_11438165>
+
+<http://engine.adzerk.net/r?e=eyJhdiI6NDE0LCJhdCI6NCwiY20iOjg0NywiY2giOjExNzgsImNyIjo1OTIxLCJkaSI6Ijc2ZTkwNWNjYWJjZDQyYjliNzFiMDFhMjA3MDAxODgzIiwiZG0iOjEsImZjIjo4ODA3LCJmbCI6MjQ0NCwia3ciOiJvcGVuY3YsaW1hZ2UtcHJvY2Vzc2luZyxjb21wdXRlci12aXNpb24saW1hZ2Utc2VnbWVudGF0aW9uLHdhdGVyc2hlZCIsIm53IjoyMiwicmYiOiJodHRwOi8vb3BlbmN2cHl0aG9uLmJsb2dzcG90LmluLzIwMTIvMDcvc29mLXdhdGVyc2hlZC1pbi1vcGVuY3YuaHRtbCIsInJ2IjowLCJwciI6MTU2OCwic3QiOjgyNzcsInpuIjo0NCwidXIiOiJodHRwOi8vY2FyZWVycy5zdGFja292ZXJmbG93LmNvbS8ifQ&s=opGB3LHRv0v-gYHs9rw-jccQmOo>
+No problem. We won't show you that ad again. Why didn't you like it?
+
+  * Uninteresting
+  * Misleading
+  * Offensive
+  * Repetitive
+
+Oops! I didn't mean to do this. <#>
+
+up vote 15 down vote
+	
+
+First of all: the function |minMaxLoc| finds only the global minimum and
+global maximum for a given input, so it is mostly useless for
+determining regional minima and/or regional maxima. But your idea is
+right, extracting markers based on regional minima/maxima for performing
+a Watershed Transform based on markers is totally fine. Let me try to
+clarify what is the Watershed Transform and how you should correctly use
+the implementation present in OpenCV.
+
+Some decent amount of papers that deal with watershed describe it
+similarly to what follows (I might miss some detail, if you are unsure:
+ask). Consider the surface of some region you know, it contains valleys
+and peaks (among other details that are irrelevant for us here). Suppose
+below this surface all you have is water, colored water. Now, make holes
+in each valley of your surface and then the water starts to fill all the
+area. At some point, differently colored waters will meet, and when this
+happen, you construct a dam such that they don't touch each other. In
+the end you have a collection of dams, which is the watershed separating
+all the different colored water.
+
+Now, if you make too many holes in that surface, you end up with too
+many regions: over-segmentation. If you make too few you get an
+under-segmentation. So, virtually any paper that suggests using
+watershed actually presents techniques to avoid these problems for the
+application the paper is dealing with.
+
+I wrote all this (which is possibly too naïve for anyone that knows what
+the Watershed Transform is) because it reflects directly on how you
+should use watershed implementations (which the current accepted answer
+is doing in a completely wrong manner). Let us start on the OpenCV
+example now, using the Python bindings.
+
+The image presented in the question is composed of many objects that are
+mostly too close and in some instances overlapping. The usefulness of
+watershed here is to separate correctly these objects, not to group them
+into a single component. So you need at least one marker for each object
+and good markers for the background. As an example, first binarize the
+input image by Otsu and perform a morphological opening for removing
+small objects. The result of this step is shown below in the left image.
+Now with the binary image consider applying the distance transform to
+it, result at right.
+
+enter image description here enter image description here
+
+With the distance transform result, we can consider some threshold such
+that we consider only the regions most distant to the background (left
+image below). Doing this, we can obtain a marker for each object by
+labeling the different regions after the earlier threshold. Now, we can
+also consider the border of a dilated version of the left image above to
+compose our marker. The complete marker is shown below at right (some
+markers are too dark to be seen, but each white region in the left image
+is represented at the right image).
+
+enter image description here enter image description here
+
+This marker we have here makes a lot of sense. Each |colored water ==
+one marker| will start to fill the region, and the watershed
+transformation will construct dams to impede that the different "colors"
+merge. If we do the transform, we get the image at left. Considering
+only the dams by composing them with the original image, we get the
+result at right.
+
+enter image description here enter image description here
+
+|import sys
+import cv2
+import numpy
+from scipy.ndimage import label
+
+def segment_on_dt(a, img):
+    border = cv2.dilate(img, None, iterations=5)
+    border = border - cv2.erode(border, None)
+
+    dt = cv2.distanceTransform(img, 2, 3)
+    dt = ((dt - dt.min()) / (dt.max() - dt.min()) * 255).astype(numpy.uint8)
+    _, dt = cv2.threshold(dt, 180, 255, cv2.THRESH_BINARY)
+    lbl, ncc = label(dt)
+    lbl = lbl * (255/ncc)
+    # Completing the markers now. 
+    lbl[border == 255] = 255
+
+    lbl = lbl.astype(numpy.int32)
+    cv2.watershed(a, lbl)
+
+    lbl[lbl == -1] = 0
+    lbl = lbl.astype(numpy.uint8)
+    return 255 - lbl
+
+
+img = cv2.imread(sys.argv[1])
+
+# Pre-processing.
+img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)    
+_, img_bin = cv2.threshold(img_gray, 0, 255,
+        cv2.THRESH_OTSU)
+img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN,
+        numpy.ones((3, 3), dtype=int))
+
+result = segment_on_dt(img, img_bin)
+cv2.imwrite(sys.argv[2], result)
+
+result[result != 255] = 0
+result = cv2.dilate(result, None)
+img[result == 255] = (0, 0, 255)
+cv2.imwrite(sys.argv[3], img)
+|
+
+share </a/14617359>|improve this answer </posts/14617359/edit>
+	
+answered Jan 31 at 2:15
+</users/1832154/mmgp>
+mmgp </users/1832154/mmgp>
+7,217425
+
+	
+	
+Thanks for the tutorial. Very well explained for us unfamiliar with the
+watershed algorithm. As you mentioned, the number of segmented objects
+will mostly be dependent on how many markers were found in the primary
+steps and here, it seems the distance transform followed by thresholding
+left some pills segmented as one. Could we have improved the results by
+changing the parameters of the thresholding? – Denis
+</users/486739/denis> May 23 at 20:42 <#comment24079351_14617359>
+
+
+    Your Answer
+
+  *
+  *
+  *
+  *
+  *
+  *
+  *
+  *
+  *
+  *
+  *
+  *
+  *
+  *
+*
+
+ 
+draft saved
+draft discarded
+
+
+      Sign up or log in
+      </users/login?returnurl=%2fquestions%2f11294859%2fhow-to-define-the-markers-for-watershed-in-opencv%23new-answer>
+
+Sign up using Google
+
+Sign up using Facebook
+
+Sign up using Stack Exchange
+
+
+      Post as a guest
+
+Name
+Email required, but not shown
+
+discard <#>
+
+By posting your answer, you agree to the privacy policy
+<http://stackexchange.com/legal/privacy-policy> and terms of service
+<http://stackexchange.com/legal/terms-of-service>.
+
+
+    Not the answer you're looking for? Browse other questions tagged
+    opencv </questions/tagged/opencv> image-processing
+    </questions/tagged/image-processing> computer-vision
+    </questions/tagged/computer-vision> image-segmentation
+    </questions/tagged/image-segmentation> watershed
+    </questions/tagged/watershed> or ask your own question
+    </questions/ask>.
+
+tagged
+
+opencv </questions/tagged/opencv> × 11661
+image-processing </questions/tagged/image-processing> × 10367
+computer-vision </questions/tagged/computer-vision> × 2054
+image-segmentation </questions/tagged/image-segmentation> × 191
+watershed </questions/tagged/watershed> × 21
+
+asked
+
+	
+
+*1 year ago*
+
+viewed
+
+	
+
+*7597 times*
+
+active
+
+	
+
+*2 months ago <?lastactivity>*
+
+No problem. We won't show you that ad again. Why didn't you like it?
+
+  * Uninteresting
+  * Misleading
+  * Offensive
+  * Repetitive
+
+Oops! I didn't mean to do this. <#>
+
+
+        Linked
+
+1
+<http://stackoverflow.com/q/11435974?lq=1> watershed segmentation opencv
+xcode
+<http://stackoverflow.com/questions/11435974/watershed-segmentation-opencv-xcode?lq=1>
+
+8
+<http://stackoverflow.com/q/12771846?lq=1> python separate round
+particles by offsetting contours / shrinking polygones
+<http://stackoverflow.com/questions/12771846/python-separate-round-particles-by-offsetting-contours-shrinking-polygones?lq=1>
+
+1
+<http://stackoverflow.com/q/16069184?lq=1> OpenCV image segmentation in
+C++ using Watershed
+<http://stackoverflow.com/questions/16069184/opencv-image-segmentation-in-c-using-watershed?lq=1>
+
+0
+<http://stackoverflow.com/q/11691069?lq=1> How to segment an image
+efficiently?
+<http://stackoverflow.com/questions/11691069/how-to-segment-an-image-efficiently?lq=1>
+
+0
+<http://stackoverflow.com/q/16202798?lq=1> Watershed in OpenCV
+<http://stackoverflow.com/questions/16202798/watershed-in-opencv?lq=1>
+
+
+        Related
+
+17
+<http://stackoverflow.com/q/6232851?rq=1> Implementing Watershed
+Segmentation in Java
+<http://stackoverflow.com/questions/6232851/implementing-watershed-segmentation-in-java?rq=1>
+
+4
+<http://stackoverflow.com/q/10284331?rq=1> Watershed segmentation
+algorithm for segmenting occluded leaves in matlab
+<http://stackoverflow.com/questions/10284331/watershed-segmentation-algorithm-for-segmenting-occluded-leaves-in-matlab?rq=1>
+
+0
+<http://stackoverflow.com/q/10480609?rq=1> How to perform Watershed
+segmentation and Blob analysis on a single image?
+<http://stackoverflow.com/questions/10480609/how-to-perform-watershed-segmentation-and-blob-analysis-on-a-single-image?rq=1>
+
+3
+<http://stackoverflow.com/q/11005569?rq=1> How to segment objects based
+on color and size?
+<http://stackoverflow.com/questions/11005569/how-to-segment-objects-based-on-color-and-size?rq=1>
+
+4
+<http://stackoverflow.com/q/11266150?rq=1> How to get threshold value
+from histogram?
+<http://stackoverflow.com/questions/11266150/how-to-get-threshold-value-from-histogram?rq=1>
+
+3
+<http://stackoverflow.com/q/14248711?rq=1> How to use Kinect depth data
+in watershed image segmentation
+<http://stackoverflow.com/questions/14248711/how-to-use-kinect-depth-data-in-watershed-image-segmentation?rq=1>
+
+1
+<http://stackoverflow.com/q/15206003?rq=1> Image Segmentation for Color
+Analysis in OpenCV
+<http://stackoverflow.com/questions/15206003/image-segmentation-for-color-analysis-in-opencv?rq=1>
+
+0
+<http://stackoverflow.com/q/15605598?rq=1> Using appropriate markers for
+watershed [opencv]
+<http://stackoverflow.com/questions/15605598/using-appropriate-markers-for-watershed-opencv?rq=1>
+
+1
+<http://stackoverflow.com/q/16069184?rq=1> OpenCV image segmentation in
+C++ using Watershed
+<http://stackoverflow.com/questions/16069184/opencv-image-segmentation-in-c-using-watershed?rq=1>
+
+-1
+<http://stackoverflow.com/q/17391842?rq=1> 3D Image segmentation using
+Otsu thresholding or Watershed Transform
+<http://stackoverflow.com/questions/17391842/3d-image-segmentation-using-otsu-thresholding-or-watershed-transform?rq=1>
+
+question feed </feeds/question/11294859>
+about </about> help </help> badges </help/badges> blog
+<http://blog.stackexchange.com?blb=1> chat
+<http://chat.stackoverflow.com> data <http://data.stackexchange.com>
+legal <http://stackexchange.com/legal> privacy policy
+<http://stackexchange.com/legal/privacy-policy> jobs
+<http://stackexchange.com/about/hiring> advertising info
+<http://engine.adzerk.net/r?e=eyJhdiI6NDE0LCJhdCI6MjAsImNtIjo5NTQsImNoIjoxMTc4LCJjciI6Mjc3NiwiZG0iOjQsImZjIjoyODYyLCJmbCI6Mjc1MSwibnciOjIyLCJydiI6MCwicHIiOjExNSwic3QiOjAsInVyIjoiaHR0cDovL3N0YWNrb3ZlcmZsb3cuY29tL2Fib3V0L2NvbnRhY3QiLCJyZSI6MX0&s=hRods5B22XvRBwWIwtIMekcyNF8>
+mobile *contact us </contact>* *feedback <http://meta.stackoverflow.com>*
+Technology 	Life / Arts 	Culture / Recreation 	Science 	Other
+
+ 1. Stack Overflow <http://stackoverflow.com>
+ 2. Server Fault <http://serverfault.com>
+ 3. Super User <http://superuser.com>
+ 4. Web Applications <http://webapps.stackexchange.com>
+ 5. Ask Ubuntu <http://askubuntu.com>
+ 6. Webmasters <http://webmasters.stackexchange.com>
+ 7. Game Development <http://gamedev.stackexchange.com>
+ 8. TeX - LaTeX <http://tex.stackexchange.com>
+
+	
+
+ 1. Programmers <http://programmers.stackexchange.com>
+ 2. Unix & Linux <http://unix.stackexchange.com>
+ 3. Ask Different (Apple) <http://apple.stackexchange.com>
+ 4. WordPress Answers <http://wordpress.stackexchange.com>
+ 5. Geographic Information Systems <http://gis.stackexchange.com>
+ 6. Electrical Engineering <http://electronics.stackexchange.com>
+ 7. Android Enthusiasts <http://android.stackexchange.com>
+ 8. IT Security <http://security.stackexchange.com>
+
+	
+
+ 1. Database Administrators <http://dba.stackexchange.com>
+ 2. Drupal Answers <http://drupal.stackexchange.com>
+ 3. SharePoint <http://sharepoint.stackexchange.com>
+ 4. User Experience <http://ux.stackexchange.com>
+ 5. Mathematica <http://mathematica.stackexchange.com>
+ 6. more (13) <http://stackexchange.com/sites#technology>
+
+	
+
+ 1. Photography <http://photo.stackexchange.com>
+ 2. Science Fiction & Fantasy <http://scifi.stackexchange.com>
+ 3. Seasoned Advice (cooking) <http://cooking.stackexchange.com>
+ 4. Home Improvement <http://diy.stackexchange.com>
+ 5. more (13) <http://stackexchange.com/sites#lifearts>
+
+	
+
+ 1. English Language & Usage <http://english.stackexchange.com>
+ 2. Skeptics <http://skeptics.stackexchange.com>
+ 3. Mi Yodeya (Judaism) <http://judaism.stackexchange.com>
+ 4. Travel <http://travel.stackexchange.com>
+ 5. Christianity <http://christianity.stackexchange.com>
+ 6. Arqade (gaming) <http://gaming.stackexchange.com>
+ 7. Bicycles <http://bicycles.stackexchange.com>
+ 8. Role-playing Games <http://rpg.stackexchange.com>
+ 9. more (21) <http://stackexchange.com/sites#culturerecreation>
+
+	
+
+ 1. Mathematics <http://math.stackexchange.com>
+ 2. Cross Validated (stats) <http://stats.stackexchange.com>
+ 3. Theoretical Computer Science <http://cstheory.stackexchange.com>
+ 4. Physics <http://physics.stackexchange.com>
+ 5. MathOverflow <http://mathoverflow.net>
+ 6. more (7) <http://stackexchange.com/sites#science>
+
+	
+
+ 1. Stack Apps <http://stackapps.com>
+ 2. Meta Stack Overflow <http://meta.stackoverflow.com>
+ 3. Area 51 <http://area51.stackexchange.com>
+ 4. Stack Overflow Careers <http://careers.stackoverflow.com>
+
+site design / logo © 2013 stack exchange inc; user contributions
+licensed under cc-wiki <http://creativecommons.org/licenses/by-sa/3.0/>
+with attribution required
+<http://blog.stackoverflow.com/2009/06/attribution-required/>
+<http://creativecommons.org/licenses/by-sa/3.0/>
+rev 2013.7.17.854
