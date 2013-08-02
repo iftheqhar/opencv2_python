@@ -6,14 +6,12 @@ while( cap.isOpened() ) :
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
     blur = cv2.GaussianBlur(gray,(5,5),0)
     ret,thresh1 = cv2.threshold(blur,70,255,cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)
-    
-    #thresh1 = cv2.adaptiveThreshold(thresh1,255,cv2.ADAPTIVE_THRESH_MEAN_C,\
-            #cv2.THRESH_BINARY,11,2)
+  
     contours, hierarchy = cv2.findContours(thresh1,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
     drawing = np.zeros(img.shape,np.uint8)
 
     max_area=0
-    #print(len(contours))
+   
     for i in range(len(contours)):
             cnt=contours[i]
             area = cv2.contourArea(cnt)
@@ -26,35 +24,17 @@ while( cap.isOpened() ) :
     if moments['m00']!=0:
                 cx = int(moments['m10']/moments['m00']) # cx = M10/M00
                 cy = int(moments['m01']/moments['m00']) # cy = M01/M00
-                #moment_area = moments['m00'] # Contour area from moment
-               # contour_area = cv2.contourArea(cnt)
-               # rect = cv2.minAreaRect(cnt)
-                #box = cv2.cv.BoxPoints(rect)
-               # box = np.int0(box)  
+              
     centr=(cx,cy)       
     cv2.circle(img,centr,5,[0,0,255],2)       
-    cv2.drawContours(drawing,[cnt],0,(0,255,0),2) # draw contours in green color
-    cv2.drawContours(drawing,[hull],0,(0,0,255),2) # draw contours in red color
-            #cv2.drawContours(drawing,[box],0,(0,0,255),2)
+    cv2.drawContours(drawing,[cnt],0,(0,255,0),2) 
+    cv2.drawContours(drawing,[hull],0,(0,0,255),2) 
+          
     cnt = cv2.approxPolyDP(cnt,0.01*cv2.arcLength(cnt,True),True)
     hull = cv2.convexHull(cnt,returnPoints = False)
     
     if(1):
                defects = cv2.convexityDefects(cnt,hull)
-               
-               
-               #l=len(defects)
-               #print(defects)
-               #if(l>4):
-                #print('five')
-               #elif(l>3): 
-                #print('four')
-               #elif(l>2):
-                #print('three')
-               #elif(l>1):
-                #print('two')
-               #elif(l==1):
-                #print('one')
                mind=0
                maxd=0
                for i in range(defects.shape[0]):
