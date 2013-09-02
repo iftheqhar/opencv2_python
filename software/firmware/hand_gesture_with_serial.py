@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import serial
-ser = serial.Serial('/dev/tty.usbserial', 9600)
+ser = serial.Serial('com17', 9600)
 cap = cv2.VideoCapture(0)
 while( cap.isOpened() ) :
     ret,img = cap.read()
